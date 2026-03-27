@@ -77,29 +77,154 @@
 export class DabbaService {
   constructor(serviceName, area) {
     // Your code here
+    this.serviceName = serviceName;
+    this.area = area;
+    this.customers = [];
+    this._nextId = 1;
   }
 
   addCustomer(name, address, mealPreference) {
     // Your code here
+    const preferenceType = ["veg", "nonveg", "jain"];
+    if (typeof mealPreference !== "string" || !preferenceType.includes(mealPreference)) {
+      return null
+    }
+
+    const existingCustomer = this.customers.find(ctm => ctm.name === name);
+
+    if (existingCustomer) {
+      return null;
+    }
+
+    const id = this._nextId++;
+
+    const newCustomer = { id , name, address, mealPreference, active: true, delivered: false }
+    this.customers.push(newCustomer)
+    
+    return newCustomer;
   }
 
   removeCustomer(name) {
     // Your code here
+    if (typeof name !== "string") {
+      return false
+    }
+
+    const customer = this.customers.find(ctm => ctm.name === name);
+
+    if (!customer || !customer.active) {
+      return false
+    }
+
+    this.customers.map(ctm => {
+      if (ctm.name === name) {
+        ctm.active = false
+      }
+
+      return ctm;
+    })
+
+    return true;
   }
 
   createDeliveryBatch() {
     // Your code here
+
+    const delivery = [];
+
+    this.customers.map(ctm => {
+      if (ctm.active) {
+        const activeCtm = {
+          customerId: ctm.id,
+          name: ctm.name,
+          address: ctm.address,
+          mealPreference: ctm.mealPreference,
+          batchTime: new Date().toISOString()
+        }
+
+        delivery.push(activeCtm)
+        return { ...ctm, delivered: false }
+      } else {
+        return { ...ctm }
+      }
+    })
+
+    return delivery;
   }
 
   markDelivered(customerId) {
     // Your code here
+    if (typeof customerId !== "number") {
+      return false
+    }
+
+    const customer = this.customers.find(ctm => ctm.id === customerId);
+
+    if (!customer || !customer.active) {
+      return false
+    }
+
+    this.customers.map(ctm => {
+      if (ctm.id === customerId) {
+        ctm.delivered = true
+      }
+
+      return ctm;
+    })
+
+    return true;
   }
 
   getDailyReport() {
     // Your code here
+    const report = {
+      totalCustomers: 0,
+      delivered: 0,
+      pending: 0,
+      mealBreakdown: {
+        veg: 0,
+        nonveg: 0,
+        jain: 0
+      }
+    };
+
+    this.customers.map(ctm => {
+      if (ctm.active) {
+        report.totalCustomers += 1;
+        
+        if (ctm.delivered) {
+          report.delivered += 1;
+        } else {
+          report.pending += 1;
+        }
+
+        if (ctm.mealPreference === "veg") {
+          report.mealBreakdown.veg += 1
+        }
+
+        if (ctm.mealPreference === "nonveg") {
+          report.mealBreakdown.nonveg += 1
+        }
+
+        if (ctm.mealPreference === "jain") {
+          report.mealBreakdown.jain += 1
+        }
+      }
+    })
+
+    return report
   }
 
   getCustomer(name) {
     // Your code here
+    if (typeof name !== "string") {
+      return null
+    }
+
+    const customer = this.customers.find(ctm => ctm.name === name)
+
+    if (!customer) return null;
+
+    return customer
   }
 }
